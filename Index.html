@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GALAXY GOVERNANCE - Digital Transformation Boardroom</title>
+<!-- PeerJS for zero-server WebRTC multiplayer -->
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<!-- QRCode.js for student easy join -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg-deep: #080c14;
+  --bg-panel: #0f172a;
+  --bg-card: #1e293b;
+  --accent-cyan: #06b6d4;
+  --accent-blue: #3b82f6;
+  --accent-gold: #f59e0b;
+  --accent-red: #ef4444;
+  --accent-green: #10b981;
+  --accent-purple: #8b5cf6;
+  
+  --res-budget: #f59e0b;
+  --res-data: #06b6d4;
+  --res-innovation: #a855f7;
+  --res-compliance: #10b981;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: radial-gradient(circle at 50% 20%, #172554 0%, var(--bg-deep) 80%);
+  color: #f1f5f9;
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .brand-font {
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* Common Components */
+button {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 700;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  color: #fff;
+}
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 15px var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-cyan { background: linear-gradient(135deg, #0284c7, #06b6d4); }
+.btn-gold { background: linear-gradient(135deg, #d97706, #f59e0b); color: #000; }
+.btn-red { background: linear-gradient(135deg, #b91c1c, #ef4444); }
+.btn-green { background: linear-gradient(135deg, #047857, #10b981); }
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: 'Orbitron', sans-serif;
+}
+.badge-budget { background: rgba(245, 158, 11, 0.2); color: var(--res-budget); border: 1px solid var(--res-budget); }
+.badge-data { background: rgba(6, 182, 212, 0.2); color: var(--res-data); border: 1px solid var(--res-data); }
+.badge-innovation { background: rgba(168, 85, 247, 0.2); color: var(--res-innovation); border: 1px solid var(--res-innovation); }
+.badge-compliance { background: rgba(16, 185, 129, 0.2); color: var(--res-compliance); border: 1px solid var(--res-compliance); }
+
+/* Landing / Join View */
+#view-lobby {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+  text-align: center;
+}
+.lobby-box {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  backdrop-filter: blur(12px);
+  padding: 35px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6), 0 0 20px rgba(6, 182, 212, 0.2);
+}
+.lobby-input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  background: #090e17;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.1rem;
+  font-family: 'Rajdhani', sans-serif;
+  text-align: center;
+}
+.lobby-input:focus { outline: none; border-color: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan); }
+
+/* Top Game Header */
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.95);
+  padding: 10px 25px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.phase-indicator {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.1rem;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: #1e293b;
+  border: 1px solid #475569;
+}
+.phase-action { color: var(--accent-cyan); border-color: var(--accent-cyan); box-shadow: 0 0 10px rgba(6, 182, 212, 0.4); }
+.phase-crisis { color: var(--accent-red); border-color: var(--accent-red); box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
+
+/* Grid Dashboard */
+.game-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+}
+@media (max-width: 1024px) {
+  .game-container { grid-template-columns: 1fr; }
+}
+
+/* Mission Board Display */
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.team-card {
+  background: var(--bg-panel);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 16px;
+  position: relative;
+  transition: border-color 0.2s;
+}
+.team-card.my-team {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+}
+.mission-progress-box {
+  background: #090e17;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+  border: 1px dashed #334155;
+}
+.slots-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.slot {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid #475569;
+  background: #1e293b;
+  position: relative;
+}
+.slot.B { border-color: var(--res-budget); color: var(--res-budget); }
+.slot.D { border-color: var(--res-data); color: var(--res-data); }
+.slot.I { border-color: var(--res-innovation); color: var(--res-innovation); }
+.slot.C { border-color: var(--res-compliance); color: var(--res-compliance); }
+
+.slot.completed {
+  background: #10b981 !important;
+  color: #000 !important;
+  border-color: #34d399 !important;
+  text-decoration: line-through;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+.slot.completed::after {
+  content: '✓';
+  position: absolute;
+  font-size: 1.2rem;
+  font-weight: 900;
+}
+
+/* Card in hand */
+.hand-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+.res-card {
+  width: 90px;
+  height: 125px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  border: 2px solid #64748b;
+  transition: transform 0.15s, box-shadow 0.15s;
+  background: #0f172a;
+}
+.res-card:hover {
+  transform: translateY(-8px);
+}
+.res-card.BUDGET { border-color: var(--res-budget); background: linear-gradient(180deg, #1e293b, #451a03); }
+.res-card.DATA { border-color: var(--res-data); background: linear-gradient(180deg, #1e293b, #083344); }
+.res-card.INNOVATION { border-color: var(--res-innovation); background: linear-gradient(180deg, #1e293b, #3b0764); }
+.res-card.COMPLIANCE { border-color: var(--res-compliance); background: linear-gradient(180deg, #1e293b, #064e3b); }
+.res-card.selected {
+  outline: 3px solid #fff;
+  transform: translateY(-12px);
+  box-shadow: 0 0 20px #fff;
+}
+
+/* Crisis Card Modal / Hero */
+.crisis-banner {
+  background: linear-gradient(90deg, #7f1d1d, #450a0a);
+  border: 2px solid var(--accent-red);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 25px rgba(239, 68, 68, 0.4);
+  animation: pulse-red 2s infinite alternate;
+}
+@keyframes pulse-red {
+  from { box-shadow: 0 0 15px rgba(239, 68, 68, 0.3); }
+  to { box-shadow: 0 0 30px rgba(239, 68, 68, 0.7); }
+}
+
+/* Facilitator Drawer */
+.host-panel {
+  background: rgba(15, 23, 42, 0.98);
+  border: 1px solid var(--accent-gold);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+/* QR Code & Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-content {
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-cyan);
+  border-radius: 16px;
+  padding: 25px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- LOBBY SCREEN -->
+<div id="view-lobby">
+  <h1 style="font-size: 2.6rem; color: var(--accent-cyan); margin-bottom: 8px;">GALAXY GOVERNANCE</h1>
+  <p style="color: #94a3b8; margin-bottom: 25px;">Digital Transformation Boardroom Simulation</p>
+
+  <div class="lobby-box">
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+      <button id="tab-btn-join" class="btn-cyan" style="flex:1" onclick="switchLobbyTab('join')">Student Join</button>
+      <button id="tab-btn-host" class="" style="flex:1" onclick="switchLobbyTab('host')">Facilitator</button>
+    </div>
+
+    <!-- STUDENT JOIN FORM -->
+    <div id="lobby-join-section">
+      <input type="text" id="join-room-code" class="lobby-input" placeholder="ENTER 6-LETTER ROOM CODE" maxlength="6" style="text-transform: uppercase;" />
+      <input type="text" id="player-name" class="lobby-input" placeholder="Your Name" />
+      <div style="margin: 12px 0; text-align: left;">
+        <label style="font-size: 0.85rem; color: #94a3b8; font-weight: bold;">SELECT YOUR TEAM:</label>
+        <select id="select-team" class="lobby-input" style="text-align: left;">
+          <option value="1">Team 1: Alpha Cyber Vanguard</option>
+          <option value="2">Team 2: Stellar FinTech</option>
+          <option value="3">Team 3: Nebula HealthTech</option>
+          <option value="4">Team 4: Quantum Logistics</option>
+        </select>
+      </div>
+      <button class="btn-cyan" style="width: 100%; padding: 14px;" onclick="joinAsStudent()">ENTER BOARDROOM</button>
+    </div>
+
+    <!-- FACILITATOR HOST FORM -->
+    <div id="lobby-host-section" style="display: none;">
+      <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 15px;">
+        Host the master game. You will control phases, draw Crisis cards, grant facilitator reserve cards, and project the master scoreboard.
+      </p>
+      <button class="btn-gold" style="width: 100%; padding: 14px;" onclick="startHostGame()">LAUNCH NEW GAME ROOM</button>
+    </div>
+  </div>
+</div>
+
+<!-- IN-GAME SCREEN -->
+<div id="view-game" style="display: none;">
+  <!-- Header Bar -->
+  <div class="top-bar">
+    <div>
+      <span class="brand-font" style="font-size: 1.2rem; color: var(--accent-cyan);">GALAXY GOVERNANCE</span>
+      <span id="room-code-tag" class="badge" style="margin-left: 10px; background: #334155; color: #fff;">ROOM: ----</span>
+      <span id="my-identity-tag" class="badge badge-innovation" style="margin-left: 6px;">Spectator</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 15px;">
+      <div id="phase-badge" class="phase-indicator phase-action">ACTION PHASE</div>
+      <button id="btn-toggle-projector" onclick="toggleProjectorView()" style="font-size: 0.75rem;">Projector Mode</button>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <!-- Main Left Area -->
+    <div>
+      <!-- Crisis Banner (when Crisis is active) -->
+      <div id="crisis-display" class="crisis-banner" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="badge" style="background: #ef4444; color: #fff; font-size: 0.85rem;">CRISIS ALERT #<span id="crisis-num">1</span></span>
+          <span id="crisis-scope" class="badge" style="background: rgba(0,0,0,0.5); color: #fca5a5;">ALL TEAMS</span>
+        </div>
+        <h2 id="crisis-title" style="margin: 10px 0 5px; color: #fecaca; font-size: 1.5rem;">CRISIS NAME</h2>
+        <p id="crisis-flavor" style="font-style: italic; color: #fca5a5; margin-bottom: 8px;">Flavor description...</p>
+        <div id="crisis-effect" style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 6px; font-weight: bold; color: #fff; border-left: 4px solid #ef4444;">
+          Effect details...
+        </div>
+      </div>
+
+      <!-- Active Team Mission Control (Student Specific) -->
+      <div id="my-team-dashboard" style="background: var(--bg-panel); border-radius: 12px; padding: 20px; border: 1px solid #334155; margin-bottom: 20px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3>YOUR TEAM BOARD: <span id="my-team-name-label" style="color: var(--accent-cyan);">Team 1</span></h3>
+          <div>
+            Points: <strong id="my-team-points" style="color: var(--accent-gold); font-size: 1.3rem;">0</strong>
+          </div>
+        </div>
+
+        <!-- Mission selection dropdown if not yet locked -->
+        <div id="mission-pick-row" style="margin: 15px 0; background: #1e293b; padding: 12px; border-radius: 8px; display: none;">
+          <span style="font-weight: bold; margin-right: 10px;">Choose Next Mission to Start:</span>
+          <button class="btn-cyan" onclick="clientSelectMission('alpha')">Mission Alpha (High: 10 pts)</button>
+          <button class="btn-green" onclick="clientSelectMission('gamma')">Mission Gamma (Med: 7 pts)</button>
+          <button class="btn-gold" onclick="clientSelectMission('beta')">Mission Beta (Low: 4 pts)</button>
+        </div>
+
+        <!-- Current Mission in progress -->
+        <div id="current-mission-container" class="mission-progress-box">
+          <div style="display: flex; justify-content: space-between;">
+            <h4 id="active-mission-title">Mission: Inactive</h4>
+            <span id="active-mission-status" class="badge badge-innovation">In Progress</span>
+          </div>
+          <div id="active-mission-slots" class="slots-container">
+            <!-- Dynamic Slots -->
+          </div>
+        </div>
+
+        <!-- Student Hand -->
+        <div style="margin-top: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4>Resource Cards in Hand (<span id="hand-count">0</span>)</h4>
+            <span style="font-size: 0.85rem; color: #94a3b8;">Click card to play for mission progress</span>
+          </div>
+          <div id="my-hand-cards" class="hand-container">
+            <!-- Dynamic cards -->
+          </div>
+        </div>
+
+        <!-- Player Actions for Action Phase -->
+        <div id="player-action-controls" style="margin-top: 15px; display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn-cyan" id="btn-work-mission" onclick="clientCommitPlayCard()" disabled>Work on Mission (Play Selected)</button>
+          <button class="btn-gold" id="btn-draw-resources" onclick="clientDrawResources()">Draw 2 Resource Cards</button>
+          <button class="btn-red" id="btn-discard-card" onclick="clientDiscardCard()" disabled>Discard Selected Card</button>
+        </div>
+      </div>
+
+      <!-- All Teams Overview (Leaderboard / Facilitator Board) -->
+      <h3>Galaxy Boardroom: All Teams Overview</h3>
+      <div id="all-teams-grid" class="board-grid" style="margin-top: 10px;">
+        <!-- 4 Team cards auto-generated -->
+      </div>
+    </div>
+
+    <!-- Right Sidebar (Facilitator Controls & Central Decks) -->
+    <div>
+      <!-- Deck status -->
+      <div style="background: var(--bg-panel); border-radius: 12px; padding: 18px; border: 1px solid #334155; margin-bottom: 20px;">
+        <h4>CENTRAL DECKS</h4>
+        <div style="margin: 12px 0; font-size: 0.9rem;">
+          <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+            <span>Main Drawing Pool:</span>
+            <strong id="deck-draw-count" style="color: var(--accent-cyan);">80</strong> cards
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-bottom: 5px;">
+            <span>Discard Pile:</span>
+            <strong id="deck-discard-count" style="color: #94a3b8;">0</strong> cards
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>Facilitator Reserve Pool:</span>
+            <strong id="deck-fac-count" style="color: var(--accent-gold);">30</strong> cards
+          </div>
+        </div>
+      </div>
+
+      <!-- Facilitator Control Panel (Visible to Host) -->
+      <div id="host-controls-panel" class="host-panel" style="display: none;">
+        <h4 style="color: var(--accent-gold); margin-bottom: 12px;">FACILITATOR CONTROLS</h4>
+        
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <button class="btn-cyan" onclick="hostNextPhase()">
+            Cycle Phase: <span id="host-btn-phase-label">Start Crisis Phase</span>
+          </button>
+          
+          <button class="btn-red" onclick="hostTriggerNextCrisis()">
+            Draw & Trigger Next Crisis (<span id="host-next-crisis-num">1</span>/15)
+          </button>
+
+          <button class="btn-gold" onclick="hostOpenFacPoolModal()">
+            Grant Facilitator Pool Card
+          </button>
+
+          <button onclick="hostResetRound()">
+            Unlock Team Actions
+          </button>
+
+          <div style="border-top: 1px solid #334155; padding-top: 10px; margin-top: 6px;">
+            <span style="font-size: 0.8rem; color: #94a3b8;">Add Manual Progress Unit:</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 4px;">
+              <button style="padding: 4px;" onclick="hostGrantProgress(1)">+1 T1</button>
+              <button style="padding: 4px;" onclick="hostGrantProgress(2)">+1 T2</button>
+              <button style="padding: 4px;" onclick="hostGrantProgress(3)">+1 T3</button>
+              <button style="padding: 4px;" onclick="hostGrantProgress(4)">+1 T4</button>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px;">
+            <button class="btn-green" style="width: 100%;" onclick="hostShowQR()">Show Student Join QR</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Rules Quick Reference -->
+      <div style="background: var(--bg-panel); border-radius: 12px; padding: 18px; border: 1px solid #334155; margin-top: 20px; font-size: 0.85rem; color: #cbd5e1;">
+        <h4 style="margin-bottom: 8px;">QUICK RULES</h4>
+        <p>• <strong>Action Phase</strong>: Each team chooses either <em>Work on Mission</em> (1 card = 1 slot) or <em>Draw 2 Cards</em>.</p>
+        <p style="margin-top: 6px;">• <strong>Crisis Phase</strong>: Immediately resolve the event card shown. Failure results in skipping the next Action phase!</p>
+        <p style="margin-top: 6px;">• <strong>Win Condition</strong>: Complete all 3 missions first, or have the most value points when the game ends.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Facilitator Grant Modal -->
+<div id="modal-fac-pool" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <h3>Facilitator Pool Grant</h3>
+    <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">Grant a reserve card to any team as a governance grant or crisis remedy.</p>
+    <div style="margin-bottom: 12px; text-align: left;">
+      <label>Select Team:</label>
+      <select id="fac-grant-team" class="lobby-input" style="text-align: left;">
+        <option value="1">Team 1</option>
+        <option value="2">Team 2</option>
+        <option value="3">Team 3</option>
+        <option value="4">Team 4</option>
+      </select>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;">
+      <button class="badge-budget" onclick="hostExecuteGrant('BUDGET')">Budget (<span id="cnt-f-b">8</span>)</button>
+      <button class="badge-data" onclick="hostExecuteGrant('DATA')">Data (<span id="cnt-f-d">8</span>)</button>
+      <button class="badge-innovation" onclick="hostExecuteGrant('INNOVATION')">Inno (<span id="cnt-f-i">7</span>)</button>
+      <button class="badge-compliance" onclick="hostExecuteGrant('COMPLIANCE')">Comp (<span id="cnt-f-c">7</span>)</button>
+    </div>
+    <button onclick="document.getElementById('modal-fac-pool').style.display='none'">Close</button>
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div id="modal-qr" class="modal-overlay" style="display: none;">
+  <div class="modal-content">
+    <h3>Scan to Join Room</h3>
+    <h2 id="modal-room-code" style="color: var(--accent-cyan); margin: 10px 0;">CODE</h2>
+    <div id="qrcode-container" style="display: flex; justify-content: center; margin: 15px 0;"></div>
+    <p style="color: #94a3b8; font-size: 0.85rem;">Connect to this session directly on smartphone or browser.</p>
+    <button onclick="document.getElementById('modal-qr').style.display='none'" style="margin-top: 15px;">Close</button>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   GAME DATA STRUCTURES & DEFINITIONS
+   ========================================================================= */
+
+// Missions specifications as per Facilitator and Mission Boards
+const MISSION_SPECS = {
+  alpha: {
+    id: 'alpha',
+    name: 'Mission Alpha (High Value)',
+    value: 10,
+    // Board: 2 Budget, 3 Data, 2 Innovation (7 slots)
+    slots: ['BUDGET', 'DATA', 'INNOVATION', 'BUDGET', 'DATA', 'INNOVATION', 'DATA']
+  },
+  gamma: {
+    id: 'gamma',
+    name: 'Mission Gamma (Medium Value)',
+    value: 7,
+    // Board: 3 Budget, 2 Data, 2 Innovation (7 slots)
+    slots: ['INNOVATION', 'BUDGET', 'BUDGET', 'DATA', 'INNOVATION', 'BUDGET', 'DATA']
+  },
+  beta: {
+    id: 'beta',
+    name: 'Mission Beta (Low Value)',
+    value: 4,
+    // Board: 2 Compliance, 2 Budget, 2 Data (6 slots)
+    slots: ['COMPLIANCE', 'BUDGET', 'DATA', 'COMPLIANCE', 'BUDGET', 'DATA']
+  }
+};
+
+// 15 Crises accurately from presentation slides
+const CRISIS_DECK = [
+  {
+    id: 1,
+    name: "Budget Cut",
+    flavor: "The CFO is cutting costs across all strategic departments.",
+    effect: "Discard 2 Budget Cards immediately from your hand."
+  },
+  {
+    id: 2,
+    name: "Tech Debt Comes Due",
+    flavor: "Legacy systems are failing under heavy enterprise workload.",
+    effect: "Discard 1 Budget + 1 Random Resource Card from hand."
+  },
+  {
+    id: 3,
+    name: "Scope Creep",
+    flavor: "Stakeholders keep adding new requirements to the roadmap.",
+    effect: "ACTIVE CRISIS: Add 1 Data + 1 Budget requirement to your current mission.",
+    action: "scope_creep"
+  },
+  {
+    id: 4,
+    name: "Innovation Trap",
+    flavor: "A new 'shiny object' technology promises to solve all problems but derails the team.",
+    effect: "CHOOSE IMMEDIATELY: Gain 2 Innovation Cards OR wipe all progress from your current mission."
+  },
+  {
+    id: 5,
+    name: "Slow Burn Security Flaw",
+    flavor: "A minor vulnerability is left unpatched. Impact lasts 2 rounds.",
+    effect: "Round 1: Discard 1 Data Card. Round 2: Discard 1 Data + 1 Compliance. (Can remove by spending 2 Compliance + 1 Budget)."
+  },
+  {
+    id: 6,
+    name: "Digital Skill Gap",
+    flavor: "Lack of digital literacy at leadership levels hinders execution.",
+    effect: "Next Action Phase: CANNOT 'Work on Mission'. Train Team (Discard 2 Budget for 2 Innovation) OR Hire (Discard 1 of each card for 1 progress) OR Do Nothing (next team steals 1 card)."
+  },
+  {
+    id: 7,
+    name: "The Patent Race",
+    flavor: "A competitor is patenting identical proprietary technology!",
+    effect: "First team to physically discard 3 Innovation + 1 Budget cards immediately gains 2 progress units and draws 2 cards."
+  },
+  {
+    id: 8,
+    name: "Rule Reset",
+    flavor: "A global black swan event reshapes market governance.",
+    effect: "'Work on Mission' action requires TWICE the normal resources. 'Draw Resources' action draws 3 cards instead of 2."
+  },
+  {
+    id: 9,
+    name: "Market Disruption",
+    flavor: "Competitor launches a disruptive solution rendering work obsolete.",
+    effect: "Mission Value of current project reduces by 2 points this round, and 3 points next round. (Spend 1 Innovation + 1 Budget to cancel)."
+  },
+  {
+    id: 10,
+    name: "Resource Snipe",
+    flavor: "A critical enterprise component is in severe short supply.",
+    effect: "Next Action Phase: Draw Resources is FORCED. Swap 2 cards with the next team's hand."
+  },
+  {
+    id: 11,
+    name: "The Great Resignation",
+    flavor: "Key digital transformation architects have been headhunted.",
+    effect: "Discard cards based on completed missions: 0 completed = 1 card; 1 completed = 2 cards; 2 completed = 3 cards."
+  },
+  {
+    id: 12,
+    name: "Regulatory Scrutiny",
+    flavor: "Regulators investigate market leaders for anti-competitive conduct.",
+    effect: "The team(s) with the most mission progress must discard 3 Compliance Cards, or ALL other teams draw 2 cards."
+  },
+  {
+    id: 13,
+    name: "Ecosystem Partnership",
+    flavor: "A major tech giant offers an acceleration alliance with deep lock-in.",
+    effect: "Choose: Remain Independent OR Form Partnership (+2 progress units immediately, but permanently reduce all mission values by 3 pts)."
+  },
+  {
+    id: 14,
+    name: "The Bidding War",
+    flavor: "Elite AI specialized engineering teams are up for hire.",
+    effect: "Secretly bid Budget cards. Highest bidder discards bid and gains 3 progress units. Ties must discard 1 more Budget to re-bid."
+  },
+  {
+    id: 15,
+    name: "The Digital Transparency Act",
+    flavor: "Strict transparency laws mandate algorithmic compliance.",
+    effect: "Team with the most Compliance resources gains 2 Budget cards. The least compliant team loses 1 Innovation card."
+  }
+];
+
+/* =========================================================================
+   CENTRAL STATE
+   ========================================================================= */
+let isHost = false;
+let myPeer = null;
+let hostConn = null;
+let studentConns = []; // Host only
+let myTeamId = 1;
+let myPlayerName = "Board Member";
+let selectedCardIndex = null;
+
+let gameState = {
+  roomCode: "",
+  phase: "ACTION", // "ACTION" or "CRISIS"
+  currentCrisisIndex: 0,
+  activeCrisis: null,
+  drawDeck: [],
+  discardDeck: [],
+  facilitatorPool: {
+    BUDGET: 8,
+    DATA: 8,
+    INNOVATION: 7,
+    COMPLIANCE: 7
+  },
+  teams: {
+    1: createDefaultTeam("Alpha Cyber Vanguard"),
+    2: createDefaultTeam("Stellar FinTech"),
+    3: createDefaultTeam("Nebula HealthTech"),
+    4: createDefaultTeam("Quantum Logistics")
+  }
+};
+
+function createDefaultTeam(name) {
+  return {
+    name: name,
+    points: 0,
+    activeMissionKey: null,
+    completedMissions: [],
+    // progress stores filled slot indices
+    missionProgress: 0,
+    scopeCreepAdded: [], // additional requirement slots if crisis 3
+    hand: [],
+    actionTakenThisRound: false
+  };
+}
+
+/* =========================================================================
+   INITIALIZATION & NETWORKING (PEERJS)
+   ========================================================================= */
+
+function switchLobbyTab(tab) {
+  document.getElementById('lobby-join-section').style.display = tab === 'join' ? 'block' : 'none';
+  document.getElementById('lobby-host-section').style.display = tab === 'host' ? 'block' : 'none';
+  document.getElementById('tab-btn-join').className = tab === 'join' ? 'btn-cyan' : '';
+  document.getElementById('tab-btn-host').className = tab === 'host' ? 'btn-gold' : '';
+}
+
+function generateRoomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+  return code;
+}
+
+// HOST INITIALIZATION
+function startHostGame() {
+  isHost = true;
+  const roomCode = generateRoomCode();
+  gameState.roomCode = roomCode;
+
+  // Initialize standard 80 card drawing pool
+  initMainDeck();
+
+  // Peer setup
+  const peerId = `gg-room-${roomCode.toLowerCase()}`;
+  myPeer = new Peer(peerId);
+
+  myPeer.on('open', (id) => {
+    document.getElementById('view-lobby').style.display = 'none';
+    document.getElementById('view-game').style.display = 'block';
+    document.getElementById('host-controls-panel').style.display = 'block';
+    document.getElementById('room-code-tag').innerText = `ROOM: ${roomCode}`;
+    document.getElementById('my-identity-tag').innerText = `FACILITATOR (HOST)`;
+    
+    // Initial deal: 5 cards to each of the 4 teams
+    dealStartingCards();
+    broadcastGameState();
+    renderUI();
+  });
+
+  myPeer.on('connection', (conn) => {
+    studentConns.push(conn);
+    conn.on('data', (data) => {
+      handleHostReceiveData(data, conn);
+    });
+    conn.on('open', () => {
+      conn.send({ type: 'STATE_SYNC', state: gameState });
+    });
+  });
+
+  myPeer.on('error', (err) => {
+    console.error("Peer error:", err);
+    alert("Connection error or room name taken. Retrying...");
+  });
+}
+
+// STUDENT JOIN INITIALIZATION
+function joinAsStudent() {
+  const code = document.getElementById('join-room-code').value.trim().toUpperCase();
+  const name = document.getElementById('player-name').value.trim() || "Agent";
+  const team = parseInt(document.getElementById('select-team').value);
+
+  if (code.length !== 6) {
+    alert("Please enter a valid 6-character room code.");
+    return;
+  }
+
+  isHost = false;
+  myTeamId = team;
+  myPlayerName = name;
+
+  myPeer = new Peer();
+  myPeer.on('open', (id) => {
+    const hostPeerId = `gg-room-${code.toLowerCase()}`;
+    hostConn = myPeer.connect(hostPeerId);
+
+    hostConn.on('open', () => {
+      document.getElementById('view-lobby').style.display = 'none';
+      document.getElementById('view-game').style.display = 'block';
+      document.getElementById('room-code-tag').innerText = `ROOM: ${code}`;
+      document.getElementById('my-identity-tag').innerText = `Team ${myTeamId} Member`;
+      document.getElementById('my-identity-tag').className = 'badge badge-budget';
+      
+      // Request state sync
+      hostConn.send({ type: 'PLAYER_JOIN', teamId: myTeamId, name: myPlayerName });
+    });
+
+    hostConn.on('data', (data) => {
+      if (data.type === 'STATE_SYNC') {
+        gameState = data.state;
+        renderUI();
+      }
+    });
+  });
+
+  myPeer.on('error', (err) => {
+    alert("Failed to connect to host. Please verify Room Code and ensure Facilitator is online.");
+  });
+}
+
+// HOST DATA HANDLER
+function handleHostReceiveData(data, conn) {
+  if (!isHost) return;
+  const t = gameState.teams[data.teamId];
+
+  switch(data.type) {
+    case 'PLAYER_JOIN':
+      broadcastGameState();
+      break;
+
+    case 'SELECT_MISSION':
+      if (t && !t.activeMissionKey) {
+        t.activeMissionKey = data.missionKey;
+        t.missionProgress = 0;
+        broadcastGameState();
+      }
+      break;
+
+    case 'ACTION_WORK_MISSION':
+      if (t && t.activeMissionKey && data.cardIndex !== null) {
+        const playedCard = t.hand[data.cardIndex];
+        const mission = MISSION_SPECS[t.activeMissionKey];
+        const allSlots = [...mission.slots, ...(t.scopeCreepAdded || [])];
+        const requiredSlot = allSlots[t.missionProgress];
+
+        if (playedCard === requiredSlot) {
+          t.hand.splice(data.cardIndex, 1);
+          gameState.discardDeck.push(playedCard);
+          t.missionProgress++;
+
+          // Check if mission completed
+          if (t.missionProgress >= allSlots.length) {
+            t.points += mission.value;
+            t.completedMissions.push(t.activeMissionKey);
+            t.activeMissionKey = null;
+            t.missionProgress = 0;
+            t.scopeCreepAdded = [];
+          }
+          t.actionTakenThisRound = true;
+          broadcastGameState();
+        }
+      }
+      break;
+
+    case 'ACTION_DRAW':
+      if (t) {
+        drawCardsForTeam(data.teamId, 2);
+        t.actionTakenThisRound = true;
+        broadcastGameState();
+      }
+      break;
+
+    case 'ACTION_DISCARD':
+      if (t && data.cardIndex !== null) {
+        const discarded = t.hand.splice(data.cardIndex, 1)[0];
+        gameState.discardDeck.push(discarded);
+        broadcastGameState();
+      }
+      break;
+  }
+}
+
+function broadcastGameState() {
+  if (!isHost) return;
+  renderUI();
+  studentConns.forEach(conn => {
+    if (conn.open) {
+      conn.send({ type: 'STATE_SYNC', state: gameState });
+    }
+  });
+}
+
+/* =========================================================================
+   DECK & CARD MANAGEMENT
+   ========================================================================= */
+
+function initMainDeck() {
+  // 80 Card Pool: Budget 26, Data 22, Innovation 18, Compliance 14
+  let cards = [];
+  for (let i = 0; i < 26; i++) cards.push('BUDGET');
+  for (let i = 0; i < 22; i++) cards.push('DATA');
+  for (let i = 0; i < 18; i++) cards.push('INNOVATION');
+  for (let i = 0; i < 14; i++) cards.push('COMPLIANCE');
+  
+  // Shuffle Fisher-Yates
+  for (let i = cards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cards[i], cards[j]] = [cards[j], cards[i]];
+  }
+  gameState.drawDeck = cards;
+  gameState.discardDeck = [];
+}
+
+function drawCardsForTeam(teamId, count) {
+  const team = gameState.teams[teamId];
+  for (let i = 0; i < count; i++) {
+    if (gameState.drawDeck.length === 0) {
+      // Reshuffle discard into draw deck
+      if (gameState.discardDeck.length > 0) {
+        gameState.drawDeck = [...gameState.discardDeck];
+        gameState.discardDeck = [];
+        for (let j = gameState.drawDeck.length - 1; j > 0; j--) {
+          const k = Math.floor(Math.random() * (j + 1));
+          [gameState.drawDeck[j], gameState.drawDeck[k]] = [gameState.drawDeck[k], gameState.drawDeck[j]];
+        }
+      } else {
+        break; // No cards left
+      }
+    }
+    team.hand.push(gameState.drawDeck.pop());
+  }
+}
+
+function dealStartingCards() {
+  for (let teamId = 1; teamId <= 4; teamId++) {
+    drawCardsForTeam(teamId, 5);
+  }
+}
+
+/* =========================================================================
+   FACILITATOR ACTIONS
+   ========================================================================= */
+
+function hostNextPhase() {
+  if (!isHost) return;
+  if (gameState.phase === 'ACTION') {
+    gameState.phase = 'CRISIS';
+    document.getElementById('host-btn-phase-label').innerText = 'Start Action Phase';
+  } else {
+    gameState.phase = 'ACTION';
+    // Reset action taken flags
+    for (let id in gameState.teams) {
+      gameState.teams[id].actionTakenThisRound = false;
+    }
+    document.getElementById('host-btn-phase-label').innerText = 'Start Crisis Phase';
+  }
+  broadcastGameState();
+}
+
+function hostTriggerNextCrisis() {
+  if (!isHost) return;
+  if (gameState.currentCrisisIndex >= CRISIS_DECK.length) {
+    alert("All 15 crises have already occurred!");
+    return;
+  }
+  const crisis = CRISIS_DECK[gameState.currentCrisisIndex];
+  gameState.activeCrisis = crisis;
+  gameState.currentCrisisIndex++;
+  gameState.phase = 'CRISIS';
+
+  // Apply automatic triggers if any (e.g., Scope Creep adds slots)
+  if (crisis.action === 'scope_creep') {
+    for (let id in gameState.teams) {
+      if (gameState.teams[id].activeMissionKey) {
+        gameState.teams[id].scopeCreepAdded.push('DATA', 'BUDGET');
+      }
+    }
+  }
+
+  broadcastGameState();
+}
+
+function hostResetRound() {
+  if (!isHost) return;
+  for (let id in gameState.teams) {
+    gameState.teams[id].actionTakenThisRound = false;
+  }
+  broadcastGameState();
+}
+
+function hostGrantProgress(teamId) {
+  if (!isHost) return;
+  const t = gameState.teams[teamId];
+  if (t && t.activeMissionKey) {
+    t.missionProgress++;
+    const mission = MISSION_SPECS[t.activeMissionKey];
+    const totalSlots = mission.slots.length + (t.scopeCreepAdded ? t.scopeCreepAdded.length : 0);
+    if (t.missionProgress >= totalSlots) {
+      t.points += mission.value;
+      t.completedMissions.push(t.activeMissionKey);
+      t.activeMissionKey = null;
+      t.missionProgress = 0;
+    }
+    broadcastGameState();
+  }
+}
+
+function hostOpenFacPoolModal() {
+  document.getElementById('modal-fac-pool').style.display = 'flex';
+  document.getElementById('cnt-f-b').innerText = gameState.facilitatorPool.BUDGET;
+  document.getElementById('cnt-f-d').innerText = gameState.facilitatorPool.DATA;
+  document.getElementById('cnt-f-i').innerText = gameState.facilitatorPool.INNOVATION;
+  document.getElementById('cnt-f-c').innerText = gameState.facilitatorPool.COMPLIANCE;
+}
+
+function hostExecuteGrant(cardType) {
+  if (!isHost) return;
+  const teamId = parseInt(document.getElementById('fac-grant-team').value);
+  if (gameState.facilitatorPool[cardType] > 0) {
+    gameState.facilitatorPool[cardType]--;
+    gameState.teams[teamId].hand.push(cardType);
+    hostOpenFacPoolModal();
+    broadcastGameState();
+  } else {
+    alert("No more " + cardType + " cards remaining in Facilitator pool!");
+  }
+}
+
+function hostShowQR() {
+  document.getElementById('modal-qr').style.display = 'flex';
+  document.getElementById('modal-room-code').innerText = gameState.roomCode;
+  const qrBox = document.getElementById('qrcode-container');
+  qrBox.innerHTML = "";
+  new QRCode(qrBox, {
+    text: window.location.href.split('?')[0] + "?room=" + gameState.roomCode,
+    width: 180,
+    height: 180
+  });
+}
+
+function toggleProjectorView() {
+  const myDash = document.getElementById('my-team-dashboard');
+  if (myDash.style.display === 'none') {
+    myDash.style.display = 'block';
+  } else {
+    myDash.style.display = 'none';
+  }
+}
+
+/* =========================================================================
+   STUDENT / CLIENT INTERACTIONS
+   ========================================================================= */
+
+function clientSelectMission(missionKey) {
+  if (isHost) {
+    gameState.teams[myTeamId].activeMissionKey = missionKey;
+    gameState.teams[myTeamId].missionProgress = 0;
+    broadcastGameState();
+  } else {
+    hostConn.send({ type: 'SELECT_MISSION', teamId: myTeamId, missionKey: missionKey });
+  }
+}
+
+function clientSelectCard(index) {
+  selectedCardIndex = index;
+  renderHand();
+  updateActionButtons();
+}
+
+function clientCommitPlayCard() {
+  if (selectedCardIndex === null) return;
+  if (isHost) {
+    handleHostReceiveData({ type: 'ACTION_WORK_MISSION', teamId: myTeamId, cardIndex: selectedCardIndex }, null);
+  } else {
+    hostConn.send({ type: 'ACTION_WORK_MISSION', teamId: myTeamId, cardIndex: selectedCardIndex });
+  }
+  selectedCardIndex = null;
+}
+
+function clientDrawResources() {
+  if (isHost) {
+    handleHostReceiveData({ type: 'ACTION_DRAW', teamId: myTeamId }, null);
+  } else {
+    hostConn.send({ type: 'ACTION_DRAW', teamId: myTeamId });
+  }
+}
+
+function clientDiscardCard() {
+  if (selectedCardIndex === null) return;
+  if (isHost) {
+    handleHostReceiveData({ type: 'ACTION_DISCARD', teamId: myTeamId, cardIndex: selectedCardIndex }, null);
+  } else {
+    hostConn.send({ type: 'ACTION_DISCARD', teamId: myTeamId, cardIndex: selectedCardIndex });
+  }
+  selectedCardIndex = null;
+}
+
+/* =========================================================================
+   UI RENDERING
+   ========================================================================= */
+
+function renderUI() {
+  // Phase indicator
+  const phaseEl = document.getElementById('phase-badge');
+  phaseEl.innerText = gameState.phase + " PHASE";
+  phaseEl.className = `phase-indicator ${gameState.phase === 'ACTION' ? 'phase-action' : 'phase-crisis'}`;
+
+  // Decks count
+  document.getElementById('deck-draw-count').innerText = gameState.drawDeck.length;
+  document.getElementById('deck-discard-count').innerText = gameState.discardDeck.length;
+  const facTotal = Object.values(gameState.facilitatorPool).reduce((a,b)=>a+b, 0);
+  document.getElementById('deck-fac-count').innerText = facTotal;
+
+  // Crisis Display
+  const crisisBox = document.getElementById('crisis-display');
+  if (gameState.activeCrisis) {
+    crisisBox.style.display = 'block';
+    document.getElementById('crisis-num').innerText = gameState.activeCrisis.id;
+    document.getElementById('crisis-title').innerText = gameState.activeCrisis.name;
+    document.getElementById('crisis-flavor').innerText = `"${gameState.activeCrisis.flavor}"`;
+    document.getElementById('crisis-effect').innerText = gameState.activeCrisis.effect;
+  } else {
+    crisisBox.style.display = 'none';
+  }
+
+  // Host Next Crisis Num
+  const hostNextNum = document.getElementById('host-next-crisis-num');
+  if (hostNextNum) hostNextNum.innerText = gameState.currentCrisisIndex + 1;
+
+  // Render Client Team View
+  renderMyTeam();
+
+  // Render All Teams Leaderboard
+  renderAllTeamsGrid();
+}
+
+function renderMyTeam() {
+  const t = gameState.teams[myTeamId];
+  if (!t) return;
+
+  document.getElementById('my-team-name-label').innerText = `Team ${myTeamId} (${t.name})`;
+  document.getElementById('my-team-points').innerText = `${t.points} PTS`;
+
+  const pickRow = document.getElementById('mission-pick-row');
+  const activeBox = document.getElementById('current-mission-container');
+
+  if (!t.activeMissionKey) {
+    pickRow.style.display = 'block';
+    activeBox.style.display = 'none';
+  } else {
+    pickRow.style.display = 'none';
+    activeBox.style.display = 'block';
+
+    const mission = MISSION_SPECS[t.activeMissionKey];
+    document.getElementById('active-mission-title').innerText = `${mission.name} [Value: ${mission.value} pts]`;
+    
+    // Build slots
+    const slotsEl = document.getElementById('active-mission-slots');
+    slotsEl.innerHTML = "";
+
+    const combinedSlots = [...mission.slots, ...(t.scopeCreepAdded || [])];
+    combinedSlots.forEach((slotType, idx) => {
+      const slotDiv = document.createElement('div');
+      const isFilled = idx < t.missionProgress;
+      slotDiv.className = `slot ${slotType[0]} ${isFilled ? 'completed' : ''}`;
+      slotDiv.innerHTML = `<span>${slotType[0]}</span>`;
+      slotsEl.appendChild(slotDiv);
+    });
+  }
+
+  renderHand();
+  updateActionButtons();
+}
+
+function renderHand() {
+  const t = gameState.teams[myTeamId];
+  const container = document.getElementById('my-hand-cards');
+  document.getElementById('hand-count').innerText = t.hand.length;
+  container.innerHTML = "";
+
+  t.hand.forEach((card, idx) => {
+    const cardDiv = document.createElement('div');
+    cardDiv.className = `res-card ${card} ${selectedCardIndex === idx ? 'selected' : ''}`;
+    cardDiv.onclick = () => clientSelectCard(idx);
+
+    cardDiv.innerHTML = `
+      <div style="font-size:0.65rem; color:#94a3b8;">RESOURCE</div>
+      <div style="font-size:0.85rem; font-weight:bold;">${card}</div>
+      <div style="text-align:right; font-size:0.9rem;">${getCardSymbol(card)}</div>
+    `;
+    container.appendChild(cardDiv);
+  });
+}
+
+function getCardSymbol(type) {
+  switch(type) {
+    case 'BUDGET': return '💳';
+    case 'DATA': return '💾';
+    case 'INNOVATION': return '⚡';
+    case 'COMPLIANCE': return '🛡️';
+    default: return '★';
+  }
+}
+
+function updateActionButtons() {
+  const t = gameState.teams[myTeamId];
+  const btnWork = document.getElementById('btn-work-mission');
+  const btnDiscard = document.getElementById('btn-discard-card');
+  const btnDraw = document.getElementById('btn-draw-resources');
+
+  const isActionPhase = gameState.phase === 'ACTION';
+
+  if (!isActionPhase || t.actionTakenThisRound) {
+    btnWork.disabled = true;
+    btnDraw.disabled = true;
+    btnDiscard.disabled = true;
+    return;
+  }
+
+  btnDraw.disabled = false;
+  btnDiscard.disabled = selectedCardIndex === null;
+
+  if (selectedCardIndex !== null && t.activeMissionKey) {
+    const selectedCard = t.hand[selectedCardIndex];
+    const mission = MISSION_SPECS[t.activeMissionKey];
+    const allSlots = [...mission.slots, ...(t.scopeCreepAdded || [])];
+    const currentRequiredSlot = allSlots[t.missionProgress];
+    btnWork.disabled = (selectedCard !== currentRequiredSlot);
+  } else {
+    btnWork.disabled = true;
+  }
+}
+
+function renderAllTeamsGrid() {
+  const grid = document.getElementById('all-teams-grid');
+  grid.innerHTML = "";
+
+  for (let id = 1; id <= 4; id++) {
+    const t = gameState.teams[id];
+    const card = document.createElement('div');
+    card.className = `team-card ${id === myTeamId ? 'my-team' : ''}`;
+
+    let missionInfo = `<span style="color:#94a3b8; font-style:italic;">No active mission</span>`;
+    let slotsHtml = ``;
+
+    if (t.activeMissionKey) {
+      const spec = MISSION_SPECS[t.activeMissionKey];
+      const allSlots = [...spec.slots, ...(t.scopeCreepAdded || [])];
+      missionInfo = `<strong style="color:var(--accent-cyan);">${spec.name}</strong> (${spec.value} pts)`;
+
+      slotsHtml = `<div class="slots-container" style="margin-top:6px;">`;
+      allSlots.forEach((slotType, idx) => {
+        const isDone = idx < t.missionProgress;
+        slotsHtml += `<div class="slot ${slotType[0]} ${isDone ? 'completed' : ''}" style="width:30px; height:30px; font-size:0.6rem;">${slotType[0]}</div>`;
+      });
+      slotsHtml += `</div>`;
+    }
+
+    card.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h4 style="font-size:0.95rem;">Team ${id}: ${t.name}</h4>
+        <span class="badge badge-budget">${t.points} PTS</span>
+      </div>
+      <div style="font-size:0.8rem; margin-top:8px;">Hand: <strong>${t.hand.length}</strong> cards | Completed: <strong>${t.completedMissions.length}</strong>/3</div>
+      <div style="margin-top:8px; font-size:0.85rem;">${missionInfo}</div>
+      ${slotsHtml}
+    `;
+    grid.appendChild(card);
+  }
+}
+
+// Auto-fill room code from URL params (?room=ABCDEF)
+window.addEventListener('load', () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const r = urlParams.get('room');
+  if (r) {
+    document.getElementById('join-room-code').value = r.toUpperCase();
+  }
+});
+</script>
+</body>
+</html>
